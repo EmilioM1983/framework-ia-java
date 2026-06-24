@@ -1,6 +1,7 @@
 # AI-DeepSeek
 
 Framework de agentes de IA en Java 21 que interactúa con modelos de lenguaje locales a través de [Ollama](https://ollama.com/).
+
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Status](https://img.shields.io/badge/status-stable-green)
