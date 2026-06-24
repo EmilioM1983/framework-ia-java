@@ -79,52 +79,37 @@ O ejecutar directamente desde IntelliJ IDEA ejecutando la clase `Main.java`.
 
 ## Uso
 
-Al ejecutar la aplicación se presenta el siguiente menú:
+Al ejecutar la aplicación se abre una **interfaz gráfica Swing** con los siguientes componentes:
+
+1. **Combo box** para seleccionar el agente deseado (5 disponibles)
+2. **Área de texto** para ingresar la entrada del usuario
+3. **Botón "Ejecutar"** para procesar la solicitud
+4. **Área de resultado** donde se muestra la respuesta del agente
+5. **Botón "Limpiar"** para reiniciar los campos
+
+### Agentes disponibles
+
+| Opción | Agente | Descripción |
+|---|---|---|
+| 1 | **Resumidor de texto** | Resume un texto ingresado a 25 palabras |
+| 2 | **Generador de texto** | Genera un artículo de 100 palabras sobre un tema |
+| 3 | **Traductor de textos (inglés-español)** | Traduce texto multilínea de inglés a español |
+| 4 | **Recomendador Ecommerce** | Recomienda productos según la consulta (notebooks, smartphones, auriculares) |
+| 5 | **Analizador de Feedback** | Analiza feedback de clientes (sentimiento, problemas, aspectos, mejoras) |
+
+### Ejemplo de uso
+
+1. Seleccionar "Recomendador Ecommerce" del combo box
+2. Escribir "notebook" en el área de texto
+3. Hacer clic en "Ejecutar"
+4. El resultado muestra los productos disponibles en esa categoría
 
 ```
-Seleccione el agente deseado
-1. Resumidor de texto
-2. Generador de texto
-3. Traductor de textos ingles-español
-4. Recomendador Ecommerce
-5. Analizador de Feedback
-6. Exit
-```
-
-### 1. Resumidor de texto
-Resume un texto ingresado a 25 palabras.
-
-### 2. Generador de texto
-Genera un artículo de 100 palabras sobre un tema.
-
-### 3. Traductor de textos (inglés-español)
-Traduce texto multilínea (finalizar con `FIN`) de inglés a español.
-
-### 4. Recomendador Ecommerce ⭐ NUEVO
-Recomienda productos según la consulta del usuario. Utiliza un catálogo local con 3 categorías: notebooks, smartphones y auriculares.
-
-```
-Seleccione el agente deseado
-1. Resumidor de texto
-2. Generador de texto
-3. Traductor de textos ingles-español
-4. Recomendador Ecommerce
-5. Analizador de Feedback
-6. Exit
-4
-Que producto desea consultar?
-notebook
-Agente: Apple MacBook Air M2
+Resultado:
+Apple MacBook Air M2
 Dell XPS 13
 Lenovo ThinkPad X1 Carbon
 ```
-
-### 5. Analizador de Feedback ⭐ NUEVO
-Analiza el feedback de un cliente y devuelve:
-1. Sentimiento (Positivo, Neutral o Negativo)
-2. Problemas detectados
-3. Aspectos destacados
-4. Recomendaciones de mejora
 
 ---
 
@@ -132,7 +117,9 @@ Analiza el feedback de un cliente y devuelve:
 
 ```
 src/main/java/org/ehmsoft/
-├── Main.java                    # Punto de entrada (6 opciones)
+├── Main.java                    # Punto de entrada (solo levanta UI)
+├── ui/
+│   └── AgentUI.java             # Interfaz gráfica Swing
 ├── agents/
 │   ├── IAgent.java              # Interfaz de agentes
 │   ├── texto/                   # Agentes de procesamiento de texto

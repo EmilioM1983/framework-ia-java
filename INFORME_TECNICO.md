@@ -24,10 +24,13 @@ AI-DeepSeek/
 ├── pom.xml
 ├── README.md
 ├── INFORME_TECNICO.md
+├── TEST_REPORT.md
 └── src/
     ├── main/
     │   ├── java/org/ehmsoft/
-    │   │   ├── Main.java                                (Punto de entrada - 6 opciones)
+    │   │   ├── Main.java                                (Punto de entrada - solo levanta UI) ⭐
+    │   │   ├── ui/
+    │   │   │   └── AgentUI.java                         (Interfaz gráfica Swing) ⭐ NUEVO
     │   │   ├── agents/
     │   │   │   ├── IAgent.java                          (Interfaz de agentes)
     │   │   │   ├── texto/
@@ -63,7 +66,7 @@ AI-DeepSeek/
         └── java/                                        (Vacío)
 ```
 
-**Total de archivos Java:** 13
+**Total de archivos Java:** 14
 
 ---
 
@@ -105,10 +108,13 @@ AI-DeepSeek/
 | Aspecto | v7 | v8 |
 |---|---|---|
 | **Agentes** | 3 (solo texto) | 5 (texto + recomendador + feedback) |
-| **Menú** | 4 opciones | 6 opciones |
+| **Interfaz** | Consola (Scanner) | Swing (JFrame + JComboBox + JTextArea) |
+| **Main.java** | 114 líneas con lógica de UI | 4 líneas solo bootstrap (invokeLater) |
+| **Nuevo paquete** | — | `org.ehmsoft.ui` con `AgentUI.java` |
 | **Prompts** | 3 en raíz de `prompts/` | 5 organizados en subpaquetes (`texto/`, `agentes/`, `negocios/`) |
-| **Archivos Java** | 10 | 13 |
+| **Archivos Java** | 10 | 14 |
 | **Catálogo de datos** | No existía | `ProductCatalog.java` con 3 categorías de productos |
+| **Tests unitarios** | No existían | 17 tests (JUnit + Mockito) |
 
 ---
 
@@ -187,43 +193,64 @@ ProductCatalog → (usado directamente por ProductRecommendationAgent)
 ### 7.4 Flujo de ejecución
 
 ```
-Main (Consola)
+Main.main()
    │
-   ├── 1: Resumir texto
-   ├── 2: Generar artículo
-   ├── 3: Traducir texto (inglés → español)
-   ├── 4: Recomendar producto (E-commerce) ⭐
-   ├── 5: Analizar feedback ⭐
-   └── 6: Salir
-   │
-   ▼
-AgentFactory.create(opcion)
-   │   └── CLIENT (Singleton) → inyectado a los agentes
-   ▼
-IAgent → (según opción)
-   │
-   ▼
-OllamaClient.generate(prompt)
-   │
-   ├── OllamaConfig
-   ├── Serializa → JSON
-   ├── POST → Ollama API
-   ├── Deserializa → OllamaResponseDto
-   ├── Validación de respuesta (null/blank → excepción)
-   │
-   ▼
-Respuesta del modelo
+   └── SwingUtilities.invokeLater(AgentUI::new)
+       │
+       ▼
+   AgentUI (JFrame 700x600)
+       │
+       ├── JComboBox (seleccionar agente 1-5)
+       ├── JTextArea (entrada del usuario)
+       ├── JButton "Ejecutar"
+       │       │
+       │       ▼
+       │   AgentFactory.create(option)
+       │       │   └── CLIENT (Singleton OllamaClient)
+       │       ▼
+       │   IAgent.execute(input)
+       │       │
+       │       ▼
+       │   OllamaClient.generate(prompt)
+       │       │
+       │       ├── OllamaConfig
+       │       ├── Serializa → JSON
+       │       ├── POST → Ollama API
+       │       ├── Deserializa → OllamaResponseDto
+       │       ├── Validación de respuesta (null/blank → excepción)
+       │       │
+       │       ▼
+       │   JTextArea (resultado)
+       │
+       └── JButton "Limpiar" → limpia campos
 ```
 
 ---
 
 ## 8. Descripción Detallada de Cada Clase
 
-### 8.1 `Main.java`
-- **Menú:** 6 opciones
-- **Opciones nuevas:** case 4 (Recomendador), case 5 (Analizador Feedback)
+### 8.1 `Main.java` ⭐ REFACTORIZADO
+- **Rol:** Punto de entrada de la aplicación. Solo levanta la interfaz gráfica.
+- **Código:** `SwingUtilities.invokeLater(AgentUI::new)` — 4 líneas totales.
+- **Principio SRP:** Ya no contiene lógica de UI ni de negocio. Su única responsabilidad es bootstrapping.
 
-### 8.2 `IAgent.java`
+### 8.2 `AgentUI.java` ⭐ NUEVO
+- **Paquete:** `org.ehmsoft.ui`
+- **Rol:** Interfaz gráfica Swing con los siguientes componentes:
+  - `JComboBox` para selección de agente (5 opciones)
+  - `JLabel` contextual que cambia según el agente seleccionado
+  - `JTextArea` para entrada de texto multilínea (con scroll)
+  - `JProgressBar` indeterminada que se muestra durante la ejecución ("Procesando...")
+  - `JButton "Ejecutar"` que dispara un `SwingWorker` asíncrono
+  - `JTextArea` no editable para mostrar resultados (con scroll)
+  - `JButton "Limpiar"` para resetear campos y ocultar progress bar
+  - Panel inferior con créditos: "Desarrollado por Emilio Mayer"
+- **Ejecución asíncrona:** Usa `SwingWorker` para no bloquear la UI mientras se procesa la solicitud
+- **Feedback visual:** Barra de progreso y botones deshabilitados durante la ejecución
+- **Validaciones:** Input vacío, selección de agente, manejo de excepciones con `JOptionPane`
+- **Tamaño:** 700x600 píxeles, centrada en pantalla
+
+### 8.3 `IAgent.java`
 - Interfaz base para todos los agentes.
 
 ### 8.3 Agentes de texto
@@ -297,18 +324,19 @@ ollama.model=deepseek-r1:8b
 ## 11. Análisis de Calidad
 
 ### ✅ Fortalezas
-1. **5 agentes funcionales** — Texto (3), E-commerce (1), Negocios (1)
-2. **Lógica híbrida** — `ProductRecommendationAgent` combina IA + catálogo local
-3. **Organización por dominios** — Paquetes `texto/`, `agentes/`, `negocios/` tanto en agents como prompts
-4. **Inyección de dependencias** — Todos los agentes reciben `OllamaClient` por constructor
-5. **Singleton** — Una única instancia de `OllamaClient` en toda la aplicación
-6. **Validación de respuesta** — Control de null/vacío en OllamaClient
-7. **Arquitectura extensible** — Nuevos agentes se agregan sin modificar código existente
+1. **Interfaz gráfica Swing** — UX mejorada respecto a la consola original
+2. **SRP aplicado** — `Main.java` reducido de 114 a 4 líneas (solo bootstrapping)
+3. **5 agentes funcionales** — Texto (3), E-commerce (1), Negocios (1)
+4. **Lógica híbrida** — `ProductRecommendationAgent` combina IA + catálogo local
+5. **Organización por dominios** — Paquetes `texto/`, `agentes/`, `negocios/` tanto en agents como prompts
+6. **Inyección de dependencias** — Todos los agentes reciben `OllamaClient` por constructor
+7. **Singleton** — Una única instancia de `OllamaClient` en toda la aplicación
+8. **Validación de respuesta** — Control de null/vacío en OllamaClient
+9. **17 tests unitarios** — Cobertura de componentes críticos con JUnit + Mockito
 
 ### ⚠️ Áreas de Mejora
-1. **Sin tests unitarios** — `src/test/java` sigue vacío
-2. **`desarrollo/` vacío** — Directorio preparado pero sin implementaciones
-3. **Catálogo hardcodeado** — `ProductCatalog` tiene datos fijos en código (podría ser configurable)
+1. **`desarrollo/` vacío** — Directorio preparado pero sin implementaciones
+2. **Catálogo hardcodeado** — `ProductCatalog` tiene datos fijos en código (podría ser configurable)
 
 ---
 
@@ -316,17 +344,19 @@ ollama.model=deepseek-r1:8b
 
 | Métrica | Valor |
 |---|---|
-| **Archivos Java** | 13 |
-| **Líneas totales** | ~370 |
-| **Clases** | 8 (Main, OllamaClient, SummarizerAgent, GeneratedTextAgent, TranslatorTextAgent, ProductRecommendationAgent, FeedbackAnalyzerAgent, OllamaConfig, ProductCatalog) |
+| **Archivos Java** | 14 |
+| **Líneas totales** | ~470 |
+| **Clases** | 9 (Main, AgentUI, OllamaClient, SummarizerAgent, GeneratedTextAgent, TranslatorTextAgent, ProductRecommendationAgent, FeedbackAnalyzerAgent, OllamaConfig, ProductCatalog) |
 | **Interfaces** | 1 (IAgent) |
 | **Records (DTOs)** | 2 (OllamaRequestDto, OllamaResponseDto) |
 | **Clases utilitarias (prompts)** | 5 (SummarizePrompt, GeneratedTextPrompt, TranslatorTextPrompt, ProductRecommendationPrompt, FeedbackAnalyzerPrompt) |
 | **Clases Factory** | 1 (AgentFactory) |
-| **Paquetes con agentes** | 3 (texto/, agentes/, negocios/) |
-| **Paquetes con prompts** | 3 (texto/, agentes/, negocios/) |
+| **Paquetes** | 7 (ui, agents, client, config, dtos, factory, prompts) |
+| **Subpaquetes de agents/** | 3 (texto/, agentes/, negocios/) |
+| **Subpaquetes de prompts/** | 3 (texto/, agentes/, negocios/) |
 | **Dependencias externas** | 3 (Jackson, SLF4J, Logback) |
 | **Archivos de config** | 1 (application.properties) |
+| **Tests unitarios** | 17 (3 clases de test) |
 
 ---
 
@@ -384,4 +414,13 @@ El reporte detallado se encuentra en [`TEST_REPORT.md`](TEST_REPORT.md).
 
 ## 15. Conclusión
 
-El proyecto AI-DeepSeek alcanza su **versión 8** con la incorporación de **2 nuevos agentes**: `ProductRecommendationAgent` (E-commerce) y `FeedbackAnalyzerAgent` (análisis de feedback), alcanzando un total de **5 agentes**. Se agregó un **catálogo de productos** (`ProductCatalog.java`) y se reorganizaron los prompts en subpaquetes por dominio. La arquitectura demuestra su madurez y extensibilidad, manteniendo la inyección de dependencias, singleton y validación de respuesta implementados en versiones anteriores.
+El proyecto AI-DeepSeek alcanza su **versión 8** con importantes mejoras arquitectónicas:
+
+1. **Interfaz gráfica Swing** — Se creó `AgentUI.java` en el nuevo paquete `org.ehmsoft.ui`, reemplazando la consola por una interfaz gráfica con `JComboBox`, `JTextArea` y botones.
+2. **Main.java simplificado** — Pasó de 114 líneas (con lógica de UI y negocio mezclada) a solo **4 líneas** que únicamente levantan la UI mediante `SwingUtilities.invokeLater()`.
+3. **Principio de Responsabilidad Única (SRP)** — `Main` solo hace bootstrapping, `AgentUI` maneja toda la interacción con el usuario, los agentes procesan la lógica de negocio.
+4. **5 agentes funcionales** — Texto (3), E-commerce (1), Negocios (1) con lógica híbrida en el recomendador.
+5. **17 tests unitarios** — Cobertura de los 3 componentes críticos (OllamaClient, ProductRecommendationAgent, AgentFactory).
+6. **Inyección de dependencias, Singleton y validación de respuesta** — Mantenidos y consolidados de versiones anteriores.
+
+La arquitectura demuestra madurez y extensibilidad, con capas claramente separadas: UI (Swing), lógica de negocio (Strategy + Factory), cliente HTTP (OllamaClient) y configuración externa (application.properties).
