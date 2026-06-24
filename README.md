@@ -1,9 +1,27 @@
 # AI-DeepSeek
 
 Framework de agentes de IA en Java 21 que interactúa con modelos de lenguaje locales a través de [Ollama](https://ollama.com/).
-
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Java](https://img.shields.io/badge/Java-21-orange)
+![Status](https://img.shields.io/badge/status-stable-green)
 ---
+## Estado del Proyecto
 
+AI-DeepSeek ha alcanzado la versión 1.0.0 y se considera
+Feature Complete.
+
+El proyecto continuará recibiendo correcciones y mejoras
+menores, pero no se prevén nuevas funcionalidades de gran
+escala.
+
+Su objetivo principal es servir como ejemplo educativo de:
+
+- Java moderno
+- Integración de LLM locales mediante Ollama
+- Arquitectura basada en agentes
+- Patrones de diseño
+- Desarrollo asistido por IA
+---
 ## Descripción
 
 AI-DeepSeek es una aplicación de consola que permite utilizar agentes de inteligencia artificial para procesar texto. Cuenta con una arquitectura extensible de agentes organizados por categorías (texto, agentes, negocios). Actualmente cuenta con **5 agentes**: resumidor, generador de artículos, traductor, recomendador E-commerce y analizador de feedback.
